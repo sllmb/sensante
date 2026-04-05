@@ -48,3 +48,8 @@ print("\n" + "=" * 50)
 print("Exploration terminée !")
 print("Prochain lab : entrainer un modele ML")
 print("=" * 50)
+
+# Analyse croisée Sexe et Diagnostic
+print("\n--- Répartition par Sexe et Diagnostic ---")
+repartition = df.groupby(['sexe', 'diagnostic']).size().unstack()
+print(repartition)
