@@ -53,3 +53,9 @@ print("=" * 50)
 print("\n--- Répartition par Sexe et Diagnostic ---")
 repartition = df.groupby(['sexe', 'diagnostic']).size().unstack()
 print(repartition)
+
+# # == REPARTION PAR SEXE ET DIAGNOSTIQUES ===
+# print(f"\n ---- Repartition par sexe et diagnostique ----")
+# sexe_diag = df.groupby(["sexe", "diagnostic"]).size()
+# for (sexe, diag), count in sexe_diag.items() :
+#         print(f"{sexe:6s} | {diag:12s} : {count:3d} patients")
