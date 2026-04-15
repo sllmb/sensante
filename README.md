@@ -12,7 +12,7 @@ SenSante utilise le *Machine Learning* pour aider au pré‑diagnostic des malad
 - `data/` : Données patients (CSV)
 - `models/` : Modèle de Machine Learning sérialisé
 - `api/` : API FastAPI
-- `frontend/` : Interface web
+- `frontend/`: Interface web
 - `notebooks/` : Scripts d’exploration
 
 ## Auteur
@@ -21,4 +21,4 @@ Salamba Diène - L2 GLSI-A - ESP/UCAD
 
 ## Cours
 
-Integration de Modèles IA - Dr. El Hadji Bassirou TOURE
+Intégration de Modèles IA - Dr. El Hadji Bassirou TOURE
