@@ -1,15 +1,13 @@
 # api/main.py
 # SenSante API - Assistant pré-diagnostic médical
-# Lab 3 - Intégration de Modèles IA - ESP/UCAD
+# Lab 3 - Intégration de Modèles IA - ESP / UCAD
 
-import joblib
-import numpy as np
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+import joblib
+import numpy as np
 
-
-# --- Schémas Pydantic ---
-
+# --- Schemas Pydantic ---
 class PatientInput(BaseModel):
     age: int = Field(..., ge=0, le=120)
     sexe: str = Field(...)
@@ -29,28 +27,38 @@ class DiagnosticOutput(BaseModel):
 
 
 # --- Application FastAPI ---
-
 app = FastAPI(
     title="SenSante API",
     description="Assistant pré-diagnostic médical pour le Sénégal",
     version="0.2.0"
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Autoriser les requêtes depuis le frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # En développement : tout accepter
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # --- Chargement du modèle (une seule fois) ---
-
 print("Chargement du modèle...")
+import os
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-model = joblib.load("models/model.pkl")
-le_sexe = joblib.load("models/encoder_sexe.pkl")
-le_region = joblib.load("models/encoder_region.pkl")
-feature_cols = joblib.load("models/feature_cols.pkl")
+model = joblib.load(os.path.join(BASE_DIR, "models/model.pkl"))
+le_sexe = joblib.load(os.path.join(BASE_DIR, "models/encoder_sexe.pkl"))
+le_region = joblib.load(os.path.join(BASE_DIR, "models/encoder_region.pkl"))
+feature_cols = joblib.load(os.path.join(BASE_DIR, "models/feature_cols.pkl"))
 
 print(f"Modèle chargé : {list(model.classes_)}")
 
 
 # --- Routes ---
-
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "SenSante API is running"}
@@ -59,7 +67,7 @@ def health_check():
 @app.post("/predict", response_model=DiagnosticOutput)
 def predict(patient: PatientInput):
 
-    # Encoder les variables catégoriques
+    # Encodage du sexe
     try:
         sexe_enc = le_sexe.transform([patient.sexe])[0]
     except ValueError:
@@ -70,6 +78,7 @@ def predict(patient: PatientInput):
             message=f"Sexe invalide : {patient.sexe}"
         )
 
+    # Encodage de la région
     try:
         region_enc = le_region.transform([patient.region])[0]
     except ValueError:
@@ -80,11 +89,15 @@ def predict(patient: PatientInput):
             message=f"Région inconnue : {patient.region}"
         )
 
-    # Construire le vecteur de features
+    # Construction du vecteur de features
     features = np.array([[
-        patient.age, sexe_enc, patient.temperature,
-        patient.tension_sys, int(patient.toux),
-        int(patient.fatigue), int(patient.maux_tete),
+        patient.age,
+        sexe_enc,
+        patient.temperature,
+        patient.tension_sys,
+        int(patient.toux),
+        int(patient.fatigue),
+        int(patient.maux_tete),
         region_enc
     ]])
 
@@ -92,12 +105,15 @@ def predict(patient: PatientInput):
     diagnostic = model.predict(features)[0]
     proba_max = float(model.predict_proba(features)[0].max())
 
-    confiance = (
-        "haute" if proba_max >= 0.7
-        else "moyenne" if proba_max >= 0.4
-        else "faible"
-    )
+    # Niveau de confiance
+    if proba_max >= 0.7:
+        confiance = "haute"
+    elif proba_max >= 0.4:
+        confiance = "moyenne"
+    else:
+        confiance = "faible"
 
+    # Messages associés
     messages = {
         "palu": "Suspicion de paludisme. Consultez rapidement.",
         "grippe": "Suspicion de grippe. Repos et hydratation.",
